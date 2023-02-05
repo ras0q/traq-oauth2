@@ -14,7 +14,11 @@ import (
 	traqoauth2 "github.com/ras0q/traq-oauth2"
 )
 
-type jsonMap map[string]interface{}
+type userInfo struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	DisplayName string `json:"displayName"`
+}
 
 // Configure your client ID and redirect URL at https://bot-console.trap.jp/clients
 var (
@@ -92,7 +96,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 
-	var user jsonMap
+	var user userInfo
 	if err := json.Unmarshal(b, &user); err != nil {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -107,7 +111,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getMeHandler(w http.ResponseWriter, _ *http.Request) {
-	user, ok := getFromSession("user").(jsonMap)
+	user, ok := getFromSession("user").(userInfo)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
