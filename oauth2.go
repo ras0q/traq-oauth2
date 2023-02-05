@@ -1,6 +1,7 @@
 package traqoauth2
 
 import (
+	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
 
@@ -75,7 +76,8 @@ func (m CodeChallengeMethod) GenerateCodeChallenge(codeVerifier string) string {
 	case CodeChallengePlain:
 		return codeVerifier
 	case CodeChallengeS256:
-		return base64.RawURLEncoding.EncodeToString([]byte(codeVerifier))
+		h := sha256.Sum256([]byte(codeVerifier))
+		return base64.RawURLEncoding.EncodeToString(h[:])
 	default:
 		fmt.Printf("WARN: unavailable code challenge method: %s\n", string(m))
 
