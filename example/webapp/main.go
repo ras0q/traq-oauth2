@@ -39,8 +39,7 @@ func main() {
 func authorizeHandler(w http.ResponseWriter, r *http.Request) {
 	codeVerifier, err := traqoauth2.GenerateCodeVerifier()
 	if err != nil {
-		log.Println(err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		handleInternalServerError(w, err)
 		return
 	}
 
@@ -49,8 +48,7 @@ func authorizeHandler(w http.ResponseWriter, r *http.Request) {
 	if m := traqoauth2.CodeChallengeMethod(r.URL.Query().Get("method")); m != "" && m != codeChallengeMethod {
 		codeChallenge, err = m.GenerateCodeChallenge(codeVerifier)
 		if err != nil {
-			log.Println(err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			handleInternalServerError(w, err)
 			return
 		}
 
@@ -89,39 +87,34 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 		traqoauth2.WithCodeVerifier(codeVerifier),
 	)
 	if err != nil {
-		log.Println(err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		handleInternalServerError(w, err)
 		return
 	}
 
 	client := conf.Client(ctx, tok)
 	res, err := client.Get("https://q.trap.jp/api/v3/users/me")
 	if err != nil {
-		log.Println(err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		handleInternalServerError(w, err)
 		return
 	}
 	defer res.Body.Close()
 
 	b, err := io.ReadAll(res.Body)
 	if err != nil {
-		log.Println(err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		handleInternalServerError(w, err)
 		return
 	}
 
 	var user userInfo
 	if err := json.Unmarshal(b, &user); err != nil {
-		log.Println(err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		handleInternalServerError(w, err)
 		return
 	}
 
 	setToSession("user", user, 1*time.Hour)
 
 	if _, err := w.Write([]byte("You are logged in!")); err != nil {
-		log.Println(err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		handleInternalServerError(w, err)
 		return
 	}
 }
@@ -135,17 +128,20 @@ func getMeHandler(w http.ResponseWriter, _ *http.Request) {
 
 	body, err := json.Marshal(user)
 	if err != nil {
-		log.Println(err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		handleInternalServerError(w, err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := w.Write(body); err != nil {
-		log.Println(err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		handleInternalServerError(w, err)
 		return
 	}
+}
+
+func handleInternalServerError(w http.ResponseWriter, err error) {
+	log.Println(err)
+	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 }
 
 var mySession = map[string]interface{}{}
