@@ -37,12 +37,23 @@ func main() {
 }
 
 func authorizeHandler(w http.ResponseWriter, r *http.Request) {
-	codeVerifier := traqoauth2.GenerateCodeVerifier()
+	codeVerifier, err := traqoauth2.GenerateCodeVerifier()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 
 	codeChallenge := codeVerifier
 	codeChallengeMethod := traqoauth2.CodeChallengePlain
 	if m := traqoauth2.CodeChallengeMethod(r.URL.Query().Get("method")); m != "" && m != codeChallengeMethod {
-		codeChallenge = m.GenerateCodeChallenge(codeVerifier)
+		codeChallenge, err = m.GenerateCodeChallenge(codeVerifier)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
 		codeChallengeMethod = m
 	}
 

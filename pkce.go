@@ -11,12 +11,12 @@ import (
 
 // GenerateCodeVerifier generates a code verifier.
 // Ref: https://datatracker.ietf.org/doc/html/rfc7636#section-4.1
-func GenerateCodeVerifier() string {
+func GenerateCodeVerifier() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
-		panic(err)
+		return "", err
 	}
-	return base64.RawURLEncoding.EncodeToString(b)
+	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
 // CodeChallengeMethod represents the code challenge method.
@@ -42,17 +42,15 @@ func (m CodeChallengeMethod) String() string {
 
 // GenerateCodeChallenge generates the code challenge from the code verifier.
 // Ref: https://datatracker.ietf.org/doc/html/rfc7636#section-4.2
-func (m CodeChallengeMethod) GenerateCodeChallenge(codeVerifier string) string {
+func (m CodeChallengeMethod) GenerateCodeChallenge(codeVerifier string) (string, error) {
 	switch m {
 	case CodeChallengePlain:
-		return codeVerifier
+		return codeVerifier, nil
 	case CodeChallengeS256:
 		h := sha256.Sum256([]byte(codeVerifier))
-		return base64.RawURLEncoding.EncodeToString(h[:])
+		return base64.RawURLEncoding.EncodeToString(h[:]), nil
 	default:
-		fmt.Printf("WARN: unavailable code challenge method: %s\n", string(m))
-
-		return ""
+		return "", fmt.Errorf("unavailable code challenge method: %s", string(m))
 	}
 }
 
