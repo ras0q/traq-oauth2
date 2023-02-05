@@ -1,4 +1,4 @@
-package webapp
+package main
 
 import (
 	"context"
@@ -23,13 +23,14 @@ var (
 	conf        = traqoauth2.NewConfig(clientID, redirectURL)
 )
 
-func StartOauth2Server() {
+func main() {
 	server := http.NewServeMux()
 
 	server.HandleFunc("/oauth2/authorize", authorizeHandler)
 	server.HandleFunc("/oauth2/callback", callbackHandler)
 	server.HandleFunc("/me", getMeHandler)
 
+	log.Println("Listening on http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", server))
 }
 
@@ -123,4 +124,19 @@ func getMeHandler(w http.ResponseWriter, _ *http.Request) {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
+}
+
+var mySession = map[string]interface{}{}
+
+func getFromSession(key string) interface{} {
+	return mySession[key]
+}
+
+func setToSession(key string, value interface{}, duration time.Duration) {
+	mySession[key] = value
+
+	go func() {
+		time.Sleep(duration)
+		delete(mySession, key)
+	}()
 }
