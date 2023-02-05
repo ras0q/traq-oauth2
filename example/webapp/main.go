@@ -80,6 +80,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
 	}
 
 	client := conf.Client(ctx, tok)
@@ -87,6 +88,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
 	}
 	defer res.Body.Close()
 
@@ -94,12 +96,14 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
 	}
 
 	var user userInfo
 	if err := json.Unmarshal(b, &user); err != nil {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
 	}
 
 	setToSession("user", user, 1*time.Hour)
@@ -107,6 +111,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	if _, err := w.Write([]byte("You are logged in!")); err != nil {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -121,12 +126,14 @@ func getMeHandler(w http.ResponseWriter, _ *http.Request) {
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := w.Write(body); err != nil {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
 	}
 }
 
