@@ -43,16 +43,15 @@ func authorizeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	codeChallenge := codeVerifier
-	codeChallengeMethod := traqoauth2.CodeChallengePlain
-	if m := traqoauth2.CodeChallengeMethod(r.URL.Query().Get("method")); m != "" && m != codeChallengeMethod {
-		codeChallenge, err = m.GenerateCodeChallenge(codeVerifier)
-		if err != nil {
-			handleInternalServerError(w, err)
-			return
-		}
+	codeChallengeMethod := traqoauth2.CodeChallengeMethod(r.URL.Query().Get("method"))
+	if codeChallengeMethod == "" {
+		codeChallengeMethod = traqoauth2.CodeChallengePlain
+	}
 
-		codeChallengeMethod = m
+	codeChallenge, err := codeChallengeMethod.GenerateCodeChallenge(codeVerifier)
+	if err != nil {
+		handleInternalServerError(w, err)
+		return
 	}
 
 	setToSession("code_verifier", codeVerifier, 1*time.Hour)
