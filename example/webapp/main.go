@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"io"
 	"log"
@@ -40,26 +39,32 @@ func main() {
 
 func authorizeHandler(w http.ResponseWriter, r *http.Request) {
 	const alphanumeric = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	var codeChallenge string
+	var codeVerifier string
 	for i := 0; i < rand.Intn(128-43)+43; i++ {
-		codeChallenge += string(alphanumeric[rand.Intn(len(alphanumeric))])
+		codeVerifier += string(alphanumeric[rand.Intn(len(alphanumeric))])
 	}
 
-	if r.URL.Query().Get("method") == "S256" {
-		codeChallenge = base64.RawURLEncoding.EncodeToString([]byte(codeChallenge))
+	codeChallenge := codeVerifier
+	codeChallengeMethod := traqoauth2.CodeChallengePlain
+	if m := traqoauth2.CodeChallengeMethod(r.URL.Query().Get("method")); m != "" && m != codeChallengeMethod {
+		codeChallenge = m.GenerateCodeChallenge(codeVerifier)
+		codeChallengeMethod = m
 	}
 
+	setToSession("code_verifier", codeVerifier, 1*time.Hour)
 	setToSession("code_challenge", codeChallenge, 1*time.Hour)
+	setToSession("code_challenge_method", codeChallengeMethod, 1*time.Hour)
 
 	authCodeURL := conf.AuthCodeURL(
 		r.URL.Query().Get("state"),
 		traqoauth2.WithCodeChallenge(codeChallenge),
+		traqoauth2.WithCodeChallengeMethod(codeChallengeMethod),
 	)
 	http.Redirect(w, r, authCodeURL, http.StatusFound)
 }
 
 func callbackHandler(w http.ResponseWriter, r *http.Request) {
-	codeVerifier, ok := getFromSession("code_challenge").(string)
+	codeVerifier, ok := getFromSession("code_verifier").(string)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
