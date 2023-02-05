@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 
 	traqoauth2 "github.com/ras0q/traq-oauth2"
@@ -35,7 +36,10 @@ func main() {
 		panic(err)
 	}
 
-	body := make([]byte, 10000)
-	_, _ = res.Body.Read(body)
-	fmt.Printf("ユーザー情報: %s\n", body)
+	b, err := io.ReadAll(res.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("Your info: %s\n", b)
 }
