@@ -4,11 +4,13 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// Traq is the OAuth2 endpoint for traQ.
 var TraQ = oauth2.Endpoint{
 	AuthURL:  "https://q.trap.jp/api/v3/oauth2/authorize",
 	TokenURL: "https://q.trap.jp/api/v3/oauth2/token",
 }
 
+// NewConfig returns a new oauth2.Config for traQ.
 func NewConfig(clientID string, redirectURL string, opts ...func(*oauth2.Config)) *oauth2.Config {
 	c := &oauth2.Config{
 		ClientID:     clientID,
@@ -25,14 +27,20 @@ func NewConfig(clientID string, redirectURL string, opts ...func(*oauth2.Config)
 	return c
 }
 
+// WithCodeChallenge sets the code_challenge parameter.
 func WithCodeChallenge(codeChallenge string) oauth2.AuthCodeOption {
 	return oauth2.SetAuthURLParam("code_challenge", codeChallenge)
 }
 
+// WithCodeChallengeMethod sets the code_challenge_method parameter.
+// The default value is "plain".
+// If you want to use "S256", use WithCodeChallengeMethod("S256").
 func WithCodeChallengeMethod(codeChallengeMethod string) oauth2.AuthCodeOption {
 	return oauth2.SetAuthURLParam("code_challenge_method", codeChallengeMethod)
 }
 
+// WithCodeVerifier sets the code_verifier parameter.
+// If you had use WithCodeChallenge, you also must use this.
 func WithCodeVerifier(codeVerifier string) oauth2.AuthCodeOption {
 	return oauth2.SetAuthURLParam("code_verifier", codeVerifier)
 }
