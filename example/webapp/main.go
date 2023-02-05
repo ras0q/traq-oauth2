@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"io"
 	"log"
@@ -79,7 +78,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := context.Background()
+	ctx := r.Context()
 	tok, err := conf.Exchange(
 		ctx,
 		code,
