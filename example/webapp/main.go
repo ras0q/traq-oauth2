@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"io"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
 	"time"
@@ -38,11 +37,7 @@ func main() {
 }
 
 func authorizeHandler(w http.ResponseWriter, r *http.Request) {
-	const alphanumeric = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	var codeVerifier string
-	for i := 0; i < rand.Intn(128-43)+43; i++ {
-		codeVerifier += string(alphanumeric[rand.Intn(len(alphanumeric))])
-	}
+	codeVerifier := traqoauth2.GenerateCodeVerifier()
 
 	codeChallenge := codeVerifier
 	codeChallengeMethod := traqoauth2.CodeChallengePlain
