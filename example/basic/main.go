@@ -11,8 +11,8 @@ import (
 
 // Configure your client ID and redirect URL at https://bot-console.trap.jp/clients
 var (
-	clientID    = os.Getenv("CLIENT_ID")
-	redirectURL = os.Getenv("REDIRECT_URL")
+	clientID    = os.Getenv("TRAQ_CLIENT_ID")
+	redirectURL = os.Getenv("TRAQ_REDIRECT_URL")
 )
 
 func main() {
