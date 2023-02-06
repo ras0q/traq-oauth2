@@ -10,7 +10,7 @@ import (
 )
 
 // GenerateCodeVerifier generates a code verifier.
-// Ref: https://datatracker.ietf.org/doc/html/rfc7636#section-4.1
+// Ref: https://www.rfc-editor.org/rfc/rfc7636#section-4.1
 func GenerateCodeVerifier() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
@@ -41,7 +41,7 @@ func (m CodeChallengeMethod) String() string {
 }
 
 // GenerateCodeChallenge generates the code challenge from the code verifier.
-// Ref: https://datatracker.ietf.org/doc/html/rfc7636#section-4.2
+// Ref: https://www.rfc-editor.org/rfc/rfc7636#section-4.2
 func (m CodeChallengeMethod) GenerateCodeChallenge(codeVerifier string) (string, error) {
 	switch m {
 	case CodeChallengePlain:
@@ -61,7 +61,7 @@ func WithCodeChallenge(codeChallenge string) oauth2.AuthCodeOption {
 
 // WithCodeChallengeMethod sets the code_challenge_method parameter.
 // The default value is "plain".
-// If you want to use "S256", use WithCodeChallengeMethod(traqoauth2.CodeChallenge).
+// If you want to use "S256", use WithCodeChallengeMethod(traqoauth2.CodeChallengeS256).
 func WithCodeChallengeMethod(codeChallengeMethod CodeChallengeMethod) oauth2.AuthCodeOption {
 	return oauth2.SetAuthURLParam("code_challenge_method", codeChallengeMethod.String())
 }
