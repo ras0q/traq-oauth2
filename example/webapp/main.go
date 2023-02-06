@@ -1,12 +1,14 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	traqoauth2 "github.com/ras0q/traq-oauth2"
 )
@@ -53,9 +55,15 @@ func authorizeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setToSession("code_verifier", codeVerifier, 1*time.Hour)
-	setToSession("code_challenge", codeChallenge, 1*time.Hour)
-	setToSession("code_challenge_method", codeChallengeMethod, 1*time.Hour)
+	session, err := globalManager.RetrieveSession(w, r)
+	if err != nil {
+		handleInternalServerError(w, err)
+		return
+	}
+
+	session[codeVerifierKey] = codeVerifier
+	session[codeChallengeKey] = codeChallenge
+	session[codeChallengeMethodKey] = codeChallengeMethod
 
 	authCodeURL := conf.AuthCodeURL(
 		r.URL.Query().Get("state"),
@@ -66,7 +74,13 @@ func authorizeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func callbackHandler(w http.ResponseWriter, r *http.Request) {
-	codeVerifier, ok := getFromSession("code_verifier").(string)
+	session, err := globalManager.RetrieveSession(w, r)
+	if err != nil {
+		handleInternalServerError(w, err)
+		return
+	}
+
+	codeVerifier, ok := session[codeVerifierKey].(string)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -109,7 +123,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setToSession("user", user, 1*time.Hour)
+	session[userKey] = user
 
 	if _, err := w.Write([]byte("You are logged in!")); err != nil {
 		handleInternalServerError(w, err)
@@ -117,8 +131,14 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getMeHandler(w http.ResponseWriter, _ *http.Request) {
-	user, ok := getFromSession("user").(userInfo)
+func getMeHandler(w http.ResponseWriter, r *http.Request) {
+	session, err := globalManager.RetrieveSession(w, r)
+	if err != nil {
+		handleInternalServerError(w, err)
+		return
+	}
+
+	user, ok := session[userKey].(userInfo)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -142,17 +162,49 @@ func handleInternalServerError(w http.ResponseWriter, err error) {
 	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 }
 
-var mySession = map[string]interface{}{}
+type (
+	sessionKey string
+	session    map[sessionKey]interface{}
+	manager    map[string]session
+)
 
-func getFromSession(key string) interface{} {
-	return mySession[key]
-}
+const (
+	sessionName string = "traq-oauth2-example"
 
-func setToSession(key string, value interface{}, duration time.Duration) {
-	mySession[key] = value
+	codeVerifierKey        sessionKey = "code_verifier"
+	codeChallengeKey       sessionKey = "code_challenge"
+	codeChallengeMethodKey sessionKey = "code_challenge_method"
+	userKey                sessionKey = "user"
+)
 
-	go func() {
-		time.Sleep(duration)
-		delete(mySession, key)
-	}()
+var globalManager = make(manager)
+
+func (m manager) RetrieveSession(w http.ResponseWriter, r *http.Request) (session, error) {
+	cookie, err := r.Cookie(sessionName)
+	if errors.Is(err, http.ErrNoCookie) {
+		b := make([]byte, 16)
+		if _, err := rand.Read(b); err != nil {
+			return nil, err
+		}
+
+		id := base64.URLEncoding.EncodeToString(b)
+		s := make(session)
+		m[id] = s
+
+		http.SetCookie(w, &http.Cookie{
+			Name:  sessionName,
+			Value: id,
+		})
+
+		return session{}, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	s, ok := m[cookie.Value]
+	if !ok {
+		return session{}, nil
+	}
+
+	return s, nil
 }
