@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 
 	traqoauth2 "github.com/ras0q/traq-oauth2"
 )
@@ -61,9 +62,9 @@ func authorizeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session[codeVerifierKey] = codeVerifier
-	session[codeChallengeKey] = codeChallenge
-	session[codeChallengeMethodKey] = codeChallengeMethod
+	session.Set(codeVerifierKey, codeVerifier)
+	session.Set(codeChallengeKey, codeChallenge)
+	session.Set(codeChallengeMethodKey, codeChallengeMethod)
 
 	authCodeURL := conf.AuthCodeURL(
 		r.URL.Query().Get("state"),
@@ -80,7 +81,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	codeVerifier, ok := session[codeVerifierKey].(string)
+	codeVerifier, ok := session.Get(codeVerifierKey).(string)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -123,7 +124,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session[userKey] = user
+	session.Set(userKey, user)
 
 	if _, err := w.Write([]byte("You are logged in!")); err != nil {
 		handleInternalServerError(w, err)
@@ -138,7 +139,7 @@ func getMeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, ok := session[userKey].(userInfo)
+	user, ok := session.Get(userKey).(userInfo)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -177,9 +178,15 @@ const (
 	userKey                sessionKey = "user"
 )
 
-var globalManager = make(manager)
+var (
+	globalManager = make(manager)
+	mux           = sync.Mutex{}
+)
 
 func (m manager) RetrieveSession(w http.ResponseWriter, r *http.Request) (session, error) {
+	mux.Lock()
+	defer mux.Unlock()
+
 	cookie, err := r.Cookie(sessionName)
 	if errors.Is(err, http.ErrNoCookie) {
 		b := make([]byte, 16)
@@ -207,4 +214,18 @@ func (m manager) RetrieveSession(w http.ResponseWriter, r *http.Request) (sessio
 	}
 
 	return s, nil
+}
+
+func (s session) Get(key sessionKey) interface{} {
+	mux.Lock()
+	defer mux.Unlock()
+
+	return s[key]
+}
+
+func (s session) Set(key sessionKey, value interface{}) {
+	mux.Lock()
+	defer mux.Unlock()
+
+	s[key] = value
 }
