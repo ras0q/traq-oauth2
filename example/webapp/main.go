@@ -45,6 +45,14 @@ func authorizeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	session, err := globalManager.RetrieveSession(w, r)
+	if err != nil {
+		handleInternalServerError(w, err)
+		return
+	}
+
+	session.Set(codeVerifierKey, codeVerifier)
+
 	codeChallengeMethod := traqoauth2.CodeChallengeMethod(r.URL.Query().Get("method"))
 	if codeChallengeMethod == "" {
 		codeChallengeMethod = traqoauth2.CodeChallengePlain
@@ -55,16 +63,6 @@ func authorizeHandler(w http.ResponseWriter, r *http.Request) {
 		handleInternalServerError(w, err)
 		return
 	}
-
-	session, err := globalManager.RetrieveSession(w, r)
-	if err != nil {
-		handleInternalServerError(w, err)
-		return
-	}
-
-	session.Set(codeVerifierKey, codeVerifier)
-	session.Set(codeChallengeKey, codeChallenge)
-	session.Set(codeChallengeMethodKey, codeChallengeMethod)
 
 	authCodeURL := conf.AuthCodeURL(
 		r.URL.Query().Get("state"),
@@ -173,8 +171,6 @@ const (
 	sessionName string = "traq-oauth2-example"
 
 	codeVerifierKey        sessionKey = "code_verifier"
-	codeChallengeKey       sessionKey = "code_challenge"
-	codeChallengeMethodKey sessionKey = "code_challenge_method"
 	userKey                sessionKey = "user"
 )
 
