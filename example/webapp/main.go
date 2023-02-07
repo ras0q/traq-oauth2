@@ -58,7 +58,7 @@ func authorizeHandler(w http.ResponseWriter, r *http.Request) {
 		codeChallengeMethod = traqoauth2.CodeChallengePlain
 	}
 
-	codeChallenge, err := codeChallengeMethod.GenerateCodeChallenge(codeVerifier)
+	codeChallenge, err := traqoauth2.GenerateCodeChallenge(codeVerifier, codeChallengeMethod)
 	if err != nil {
 		handleInternalServerError(w, err)
 		return

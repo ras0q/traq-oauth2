@@ -29,28 +29,17 @@ const (
 	CodeChallengeS256 CodeChallengeMethod = "S256"
 )
 
-// String returns the string representation of the code challenge method.
-func (m CodeChallengeMethod) String() string {
-	if m == CodeChallengePlain || m == CodeChallengeS256 {
-		return string(m)
-	}
-
-	fmt.Printf("WARN: unavailable code challenge method: %s\n", string(m))
-
-	return ""
-}
-
 // GenerateCodeChallenge generates the code challenge from the code verifier.
 // Ref: https://www.rfc-editor.org/rfc/rfc7636#section-4.2
-func (m CodeChallengeMethod) GenerateCodeChallenge(codeVerifier string) (string, error) {
-	switch m {
+func GenerateCodeChallenge(codeVerifier string, codeChallengeMethod CodeChallengeMethod) (string, error) {
+	switch codeChallengeMethod {
 	case CodeChallengePlain:
 		return codeVerifier, nil
 	case CodeChallengeS256:
 		h := sha256.Sum256([]byte(codeVerifier))
 		return base64.RawURLEncoding.EncodeToString(h[:]), nil
 	default:
-		return "", fmt.Errorf("unavailable code challenge method: %s", string(m))
+		return "", fmt.Errorf("unavailable code challenge method: %s", codeChallengeMethod)
 	}
 }
 
@@ -63,7 +52,7 @@ func WithCodeChallenge(codeChallenge string) oauth2.AuthCodeOption {
 // The default value is "plain".
 // If you want to use "S256", use WithCodeChallengeMethod(traqoauth2.CodeChallengeS256).
 func WithCodeChallengeMethod(codeChallengeMethod CodeChallengeMethod) oauth2.AuthCodeOption {
-	return oauth2.SetAuthURLParam("code_challenge_method", codeChallengeMethod.String())
+	return oauth2.SetAuthURLParam("code_challenge_method", string(codeChallengeMethod))
 }
 
 // WithCodeVerifier sets the code_verifier parameter.
