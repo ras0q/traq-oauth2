@@ -185,29 +185,34 @@ func (m manager) RetrieveSession(w http.ResponseWriter, r *http.Request) (sessio
 
 	cookie, err := r.Cookie(sessionName)
 	if errors.Is(err, http.ErrNoCookie) {
-		b := make([]byte, 16)
-		if _, err := rand.Read(b); err != nil {
-			return nil, err
-		}
-
-		id := base64.URLEncoding.EncodeToString(b)
-		s := make(session)
-		m[id] = s
-
-		http.SetCookie(w, &http.Cookie{
-			Name:  sessionName,
-			Value: id,
-		})
-
-		return s, nil
+		return m.newSession(w)
 	} else if err != nil {
 		return nil, err
 	}
 
 	s, ok := m[cookie.Value]
 	if !ok {
-		return session{}, nil
+		return m.newSession(w)
 	}
+
+	return s, nil
+}
+
+func (m manager) newSession(w http.ResponseWriter) (session, error) {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return nil, err
+	}
+
+	id := base64.URLEncoding.EncodeToString(b)
+	s := make(session)
+	m[id] = s
+
+	http.SetCookie(w, &http.Cookie{
+		Name:  sessionName,
+		Value: id,
+		Path:  "/",
+	})
 
 	return s, nil
 }
