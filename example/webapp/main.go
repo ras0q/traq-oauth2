@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"io"
 	"log"
@@ -12,13 +11,8 @@ import (
 	"sync"
 
 	traqoauth2 "github.com/ras0q/traq-oauth2"
+	"golang.org/x/oauth2"
 )
-
-type userInfo struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	DisplayName string `json:"displayName"`
-}
 
 // Configure your client ID and redirect URL at https://bot-console.trap.jp/clients
 var (
@@ -102,27 +96,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := conf.Client(ctx, tok)
-	res, err := client.Get("https://q.trap.jp/api/v3/users/me")
-	if err != nil {
-		handleInternalServerError(w, err)
-		return
-	}
-	defer res.Body.Close()
-
-	b, err := io.ReadAll(res.Body)
-	if err != nil {
-		handleInternalServerError(w, err)
-		return
-	}
-
-	var user userInfo
-	if err := json.Unmarshal(b, &user); err != nil {
-		handleInternalServerError(w, err)
-		return
-	}
-
-	session.Set(userKey, user)
+	session.Set(tokenKey, tok)
 
 	if _, err := w.Write([]byte("You are logged in!")); err != nil {
 		handleInternalServerError(w, err)
@@ -137,20 +111,28 @@ func getMeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, ok := session.Get(userKey).(userInfo)
+	tok, ok := session.Get(tokenKey).(*oauth2.Token)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	body, err := json.Marshal(user)
+	client := conf.Client(r.Context(), tok)
+	res, err := client.Get("https://q.trap.jp/api/v3/users/me")
+	if err != nil {
+		handleInternalServerError(w, err)
+		return
+	}
+	defer res.Body.Close()
+
+	b, err := io.ReadAll(res.Body)
 	if err != nil {
 		handleInternalServerError(w, err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(body); err != nil {
+	if _, err := w.Write(b); err != nil {
 		handleInternalServerError(w, err)
 		return
 	}
@@ -171,7 +153,7 @@ const (
 	sessionName string = "traq-oauth2-example"
 
 	codeVerifierKey sessionKey = "code_verifier"
-	userKey         sessionKey = "user"
+	tokenKey        sessionKey = "access_token"
 )
 
 var (
