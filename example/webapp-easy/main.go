@@ -14,12 +14,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-type userInfo struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	DisplayName string `json:"displayName"`
-}
-
 // Configure your client ID and redirect URL at https://bot-console.trap.jp/clients
 var (
 	clientID    = os.Getenv("TRAQ_CLIENT_ID")
