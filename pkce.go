@@ -29,6 +29,18 @@ const (
 	CodeChallengeS256 CodeChallengeMethod = "S256"
 )
 
+// CodeChallengeMethodFromStr returns the CodeChallengeMethod from the string.
+func CodeChallengeMethodFromStr(s string) (CodeChallengeMethod, bool) {
+	switch s {
+	case string(CodeChallengePlain):
+		return CodeChallengePlain, true
+	case string(CodeChallengeS256):
+		return CodeChallengeS256, true
+	default:
+		return "", false
+	}
+}
+
 // GenerateCodeChallenge generates the code challenge from the code verifier.
 // Ref: https://www.rfc-editor.org/rfc/rfc7636#section-4.2
 func GenerateCodeChallenge(codeVerifier string, codeChallengeMethod CodeChallengeMethod) (string, error) {
