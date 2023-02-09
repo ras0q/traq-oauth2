@@ -170,8 +170,8 @@ type (
 const (
 	sessionName string = "traq-oauth2-example"
 
-	codeVerifierKey        sessionKey = "code_verifier"
-	userKey                sessionKey = "user"
+	codeVerifierKey sessionKey = "code_verifier"
+	userKey         sessionKey = "user"
 )
 
 var (
@@ -199,7 +199,7 @@ func (m manager) RetrieveSession(w http.ResponseWriter, r *http.Request) (sessio
 			Value: id,
 		})
 
-		return session{}, nil
+		return s, nil
 	} else if err != nil {
 		return nil, err
 	}
