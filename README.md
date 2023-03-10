@@ -15,8 +15,13 @@ traq-oauth2 provides support for OAuth2 authentication in [traQ](https://github.
 
 ## Installation
 
-```bash
-go get github.com/traPtitech/traq-oauth2
+```go
+package main
+
+import (
+	// ...
+	traqoauth2 "github.com/ras0q/traq-oauth2"
+)
 ```
 
 ## Usage
