@@ -47,9 +47,10 @@ func authorizeHandler(w http.ResponseWriter, r *http.Request) {
 
 	session.Set(codeVerifierKey, codeVerifier)
 
-	codeChallengeMethod := traqoauth2.CodeChallengeMethod(r.URL.Query().Get("method"))
-	if codeChallengeMethod == "" {
-		codeChallengeMethod = traqoauth2.CodeChallengePlain
+	codeChallengeMethod, ok := traqoauth2.CodeChallengeMethodFromStr(r.URL.Query().Get("method"))
+	if !ok {
+		http.Error(w, "invalid code_challenge_method", http.StatusBadRequest)
+		return
 	}
 
 	codeChallenge, err := traqoauth2.GenerateCodeChallenge(codeVerifier, codeChallengeMethod)

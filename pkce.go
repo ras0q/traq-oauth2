@@ -20,24 +20,39 @@ func GenerateCodeVerifier() (string, error) {
 }
 
 // CodeChallengeMethod represents the code challenge method.
-type CodeChallengeMethod string
+type CodeChallengeMethod int
+
+var _ fmt.Stringer = CodeChallengeMethod(0)
 
 const (
 	// CodeChallengePlain is the PKCE "plain" method.
-	CodeChallengePlain CodeChallengeMethod = "plain"
+	CodeChallengePlain CodeChallengeMethod = iota
 	// CodeChallengeS256 is the PKCE "S256" method.
-	CodeChallengeS256 CodeChallengeMethod = "S256"
+	CodeChallengeS256
 )
 
+// String returns the string representation of the CodeChallengeMethod.
+func (m CodeChallengeMethod) String() string {
+	switch m {
+	case CodeChallengePlain:
+		return "plain"
+	case CodeChallengeS256:
+		return "S256"
+	default:
+		return "unknown"
+	}
+}
+
 // CodeChallengeMethodFromStr returns the CodeChallengeMethod from the string.
+// If the string is empty, CodeChallengePlain is returned.
 func CodeChallengeMethodFromStr(s string) (CodeChallengeMethod, bool) {
 	switch s {
-	case string(CodeChallengePlain):
+	case "", CodeChallengePlain.String():
 		return CodeChallengePlain, true
-	case string(CodeChallengeS256):
+	case CodeChallengeS256.String():
 		return CodeChallengeS256, true
 	default:
-		return "", false
+		return 0, false
 	}
 }
 
@@ -64,7 +79,7 @@ func WithCodeChallenge(codeChallenge string) oauth2.AuthCodeOption {
 // The default value is "plain".
 // If you want to use "S256", use WithCodeChallengeMethod(traqoauth2.CodeChallengeS256).
 func WithCodeChallengeMethod(codeChallengeMethod CodeChallengeMethod) oauth2.AuthCodeOption {
-	return oauth2.SetAuthURLParam("code_challenge_method", string(codeChallengeMethod))
+	return oauth2.SetAuthURLParam("code_challenge_method", codeChallengeMethod.String())
 }
 
 // WithCodeVerifier sets the code_verifier parameter.
