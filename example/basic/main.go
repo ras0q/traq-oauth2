@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -13,9 +14,13 @@ import (
 var (
 	clientID    = os.Getenv("TRAQ_CLIENT_ID")
 	redirectURL = os.Getenv("TRAQ_REDIRECT_URL")
+
+	printToken = flag.Bool("print-token", false, "print access token (default: false)")
 )
 
 func main() {
+	flag.Parse()
+
 	conf := traqoauth2.NewConfig(clientID, redirectURL)
 	authURL := conf.AuthCodeURL("STATE")
 	fmt.Printf("Visit the URL for the auth dialog:\n%s\n", authURL)
@@ -28,6 +33,10 @@ func main() {
 	tok, err := conf.Exchange(ctx, code)
 	if err != nil {
 		panic(err)
+	}
+
+	if *printToken {
+		fmt.Printf("Your token: %s\n", tok.AccessToken)
 	}
 
 	client := conf.Client(ctx, tok)
