@@ -1,3 +1,4 @@
+// Deprecated: use github.com/traPtitech/go-traq-oauth2 instead.
 module github.com/ras0q/traq-oauth2
 
 go 1.20
