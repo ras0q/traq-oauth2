@@ -1,3 +1,5 @@
+⚠️ **This repository is now archived. Please use [traPtitech/go-traq-oauth2](https://github.com/traPtitech/go-traq-oauth2)** ⚠️
+
 # traq-oauth2
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/ras0q/traq-oauth2.svg)](https://pkg.go.dev/github.com/ras0q/traq-oauth2)
